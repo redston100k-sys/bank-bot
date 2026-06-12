@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 # ==========================================
 # 🛑 ضع توكن بوتك هنا
 # ==========================================
-TOKEN = '8998885953:AAEccMLkjPx4shntXeNWiC5NCVaQQXivFn8'
+TOKEN = '8998885953:AAEccMLkjPx4sHntXeNWiC5NCMaQQXiwFn8'
 bot = telebot.TeleBot(TOKEN)
 DB_PATH = 'bank_server.db'
 
