@@ -21,7 +21,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(b"Economy Bot with High Salaries is Active!")
+        self.wfile.write(b"Economy Bot with Fixed Commands is Active!")
 
 def run_web_server():
     port = int(os.environ.get("PORT", 10000))
@@ -125,8 +125,7 @@ def check_and_apply_debts():
 init_db()
 
 # ==========================================
-# 💼 [قائمة الوظائف المحدثة برواتب ضخمة]
-# الحد الأدنى 1000 ريال، والحد الأعلى يصل لـ 20,000 ريال خيالية!
+# 💼 قائمة الوظائف برواتب ضخمة ومتنوعة
 # ==========================================
 JOBS = [
     {"job": "رائد فضاء طموح 🚀", "min": 12000, "max": 20000, "msg": "شاركت في رحلة استكشافية مدارية سرية وصُرف لك بدل مخاطر خيالي!"},
@@ -144,16 +143,16 @@ JOBS = [
 ]
 
 # ==========================================
-# 🎮 الأوامر الأساسية وإنشاء الحساب
+# 🎮 الأوامر الأساسية وإنشاء الحساب (تحديث الفلتر)
 # ==========================================
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
-    bot.reply_to(message, "🏦 أهلاً بك في البنك المطوّر بالكامل!\nاكتب `إنشاء حساب` للبدء فوراً.")
+    bot.reply_to(message, "🏦 أهلاً بك في البنك المطوّر بالكامل!\nاكتب `إنشاء حساب` أو `/create` للبدء فوراً.")
 
-@bot.message_handler(func=lambda message: message.text == "إنشاء حساب")
+# الفلتر الجديد يضمن التقاط الكلمة سواء كانت عادية أو مسبوقة بـ /
+@bot.message_handler(func=lambda message: message.text in ["إنشاء حساب", "/create", "انشاء حساب"])
 def create_account(message):
     user_id = message.from_user.id
-    name = message.from_user.first_name
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT has_account FROM users WHERE user_id = ?', (user_id,))
@@ -174,12 +173,12 @@ def create_account(message):
 # ==========================================
 # 📊 أمر رصيد الفلوس
 # ==========================================
-@bot.message_handler(func=lambda message: message.text == "فلوسي")
+@bot.message_handler(func=lambda message: message.text in ["فلوسي", "/money"])
 def my_money(message):
     check_and_apply_debts()
     user_id = message.from_user.id
     if not is_registered(user_id):
-        bot.reply_to(message, "⚠️ سجل حسابك أولاً.")
+        bot.reply_to(message, "⚠️ سجل حسابك أولاً عن طريق كتابة `إنشاء حساب`.")
         return
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -194,12 +193,14 @@ def my_money(message):
     bot.reply_to(message, f"📊 **رصيدك الحالي:**\n💵 كاش بجيبك: {cash} ريال\n🏦 بالبنك الآمن: {bank} ريال{penalty_msg}")
 
 # ==========================================
-# 💼 أمر الراتب
+# 💼 أمر الراتب (تحديث الفلتر ليعمل كأمر ونص عادي)
 # ==========================================
-@bot.message_handler(func=lambda message: message.text == "راتب")
+@bot.message_handler(func=lambda message: message.text in ["راتب", "/salary"])
 def get_salary(message):
     user_id = message.from_user.id
-    if not is_registered(user_id): return
+    if not is_registered(user_id):
+        bot.reply_to(message, "⚠️ يجب أن تمتلك حساباً أولاً! اكتب `إنشاء حساب`.")
+        return
     
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -225,7 +226,7 @@ def get_salary(message):
 # ==========================================
 # 🎁 الهدية اليومية
 # ==========================================
-@bot.message_handler(func=lambda message: message.text == "يومي")
+@bot.message_handler(func=lambda message: message.text in ["يومي", "/daily"])
 def get_daily(message):
     user_id = message.from_user.id
     if not is_registered(user_id): return
@@ -238,7 +239,7 @@ def get_daily(message):
         bot.reply_to(message, "❌ المكافأة اليومية كل 24 ساعة!")
         conn.close()
         return
-    bonus = 1500  # تم رفع اليومية أيضاً لتتناسب مع الرواتب الجديدة
+    bonus = 1500
     cursor.execute('UPDATE users SET cash = ?, last_daily = ? WHERE user_id = ?', (cash + bonus, now.strftime('%Y-%m-%d %H:%M:%S'), user_id))
     conn.commit()
     conn.close()
@@ -403,7 +404,7 @@ def steal_cash(message):
         cursor.execute('UPDATE users SET cash = cash - ? WHERE user_id = ?', (stolen, victim_id))
         bot.reply_to(message, f"🥷 نجحت السرقة!\n💰 سرقت بنجاح {stolen} ريال كاش من مخبأ {message.reply_to_message.from_user.first_name}!")
     else:
-        penalty = random.randint(100, 1000) # تم رفع قيمة العقوبة لتتناسب مع الاقتصاد الجديد
+        penalty = random.randint(100, 1000)
         penalty = min(penalty, thief_cash) if thief_cash > 0 else 0
         cursor.execute('UPDATE users SET cash = cash - ? WHERE user_id = ?', (penalty, thief_id))
         cursor.execute('UPDATE users SET cash = cash + ? WHERE user_id = ?', (penalty, victim_id))
