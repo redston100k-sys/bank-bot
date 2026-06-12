@@ -7,9 +7,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime, timedelta
 
 # ==========================================
-# 🛑 [هاشتاج للتعديل] - ضع توكن بوتك هنا
+# 🛑 ضع توكن بوتك هنا
 # ==========================================
-TOKEN = '8998885953:AAEccMLkjPx4sHntXeNWiC5NCMaQQXiwFn8'
+TOKEN = '8998885953:AAEccMLkjPx4shntXeNWiC5NCVaQQXivFn8'
 bot = telebot.TeleBot(TOKEN)
 DB_PATH = 'bank_server.db'
 
@@ -21,7 +21,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(b"Economy Bot with Debt and Steal System is Active!")
+        self.wfile.write(b"Economy Bot with High Salaries is Active!")
 
 def run_web_server():
     port = int(os.environ.get("PORT", 10000))
@@ -29,12 +29,11 @@ def run_web_server():
     server.serve_forever()
 
 # ==========================================
-# 💾 إنشاء وتحديث قاعدة البيانات بالأنظمة المعقدة الجديدة
+# 💾 إنشاء وتحديث قاعدة البيانات
 # ==========================================
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    # إنشاء جدول المستخدمين الأساسي
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
@@ -49,10 +48,9 @@ def init_db():
             last_deposit TEXT
         )
     ''')
-    # جدول الديون لمتابعة الدائن والمدين والوقت والمبالغ المتبقية
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS debts (
-            debt_id INTEGER PRIMARY KEY AUTOUTION,
+            debt_id INTEGER PRIMARY KEY AUTOINCREMENT,
             debtor_id INTEGER,
             creditor_id INTEGER,
             amount INTEGER,
@@ -72,7 +70,6 @@ def is_registered(user_id):
     conn.close()
     return True if result and result[0] == 1 else False
 
-# دالة سحرية تقوم بفحص الديون المتأخرة تلقائياً وتطبيق العقوبات ومضاعفة الدين وضبط الخصم التلقائي
 def check_and_apply_debts():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -84,7 +81,6 @@ def check_and_apply_debts():
     for debt in all_debts:
         debt_id, debtor, creditor, amount, s_time, is_doubled, rem_penalty = debt
         
-        # إذا كان هناك عقوبة دين مستمرة (سحب تلقائي مستقبلي)
         if rem_penalty > 0:
             cursor.execute('SELECT cash FROM users WHERE user_id = ?', (debtor,))
             debtor_cash = cursor.fetchone()[0]
@@ -98,20 +94,16 @@ def check_and_apply_debts():
                     cursor.execute('DELETE FROM debts WHERE debt_id = ?', (debt_id,))
             continue
 
-        # التحقق من الديون التي تجاوزت 3 ساعات ولم تتضاعف بعد
         if s_time and is_doubled == 0:
             start_dt = datetime.strptime(s_time, '%Y-%m-%d %H:%M:%S')
-            # [هاشتاج للتعديل] - هنا وقت مهلة الدين (3 ساعات)
             if now > start_dt + timedelta(hours=3):
                 doubled_amount = amount * 2
                 
-                # جلب كاش وبنك الشخص المدين (المتأخر)
                 cursor.execute('SELECT cash, bank FROM users WHERE user_id = ?', (debtor,))
                 d_cash, d_bank = cursor.fetchone()
                 total_debtor_money = d_cash + d_bank
                 
                 if total_debtor_money >= doubled_amount:
-                    # إذا كان معه المبلغ مضاعفاً يتم سحبه بالكامل فوراً وتغليق الدين
                     if d_cash >= doubled_amount:
                         cursor.execute('UPDATE users SET cash = cash - ? WHERE user_id = ?', (doubled_amount, debtor))
                     else:
@@ -121,11 +113,9 @@ def check_and_apply_debts():
                     cursor.execute('UPDATE users SET bank = bank + ? WHERE user_id = ?', (doubled_amount, creditor))
                     cursor.execute('DELETE FROM debts WHERE debt_id = ?', (debt_id,))
                 else:
-                    # [النظام الصارم] إذا كان لا يملك الضعف، يتم تصفير كل أمواله حالياً وتحويلها للدائن
                     cursor.execute('UPDATE users SET cash = 0, bank = 0 WHERE user_id = ?', (debtor,))
                     cursor.execute('UPDATE users SET bank = bank + ? WHERE user_id = ?', (total_debtor_money, creditor))
                     
-                    # الباقي يسجل كعقوبة مستمرة تخصم تلقائياً من أي كاش قادم له
                     penalty_left = doubled_amount - total_debtor_money
                     cursor.execute('UPDATE debts SET is_doubled = 1, remaining_penalty = ? WHERE debt_id = ?', (penalty_left, debt_id))
                     
@@ -134,12 +124,23 @@ def check_and_apply_debts():
 
 init_db()
 
+# ==========================================
+# 💼 [قائمة الوظائف المحدثة برواتب ضخمة]
+# الحد الأدنى 1000 ريال، والحد الأعلى يصل لـ 20,000 ريال خيالية!
+# ==========================================
 JOBS = [
-    {"job": "مبرمج محترف 💻", "min": 1200, "max": 2000, "msg": "أصلحت ثغرة برمجية في سيرفرات شركة ضخمة ونزل لك مكافأة!"},
-    {"job": "مصمم جرافيك 🎨", "min": 800, "max": 1400, "msg": "صممت هوية بصرية رهيبة لأحد المشاهير واستلمت دفعتك!"},
-    {"job": "طبيب جراح 🩺", "min": 1500, "max": 2500, "msg": "أنجزت عملية جراحية صعبة بنجاح كامل واستلمت رصيدك!"}
-    {"job": "رقاصه 💃", "min": 3000, "max": 7000, "msg": "ايوا كذا دلعني!"},
-    {"job": "مهندس", "min": 10000, "max": 30000, "msg": "طبيعي مهندس!"},
+    {"job": "رائد فضاء طموح 🚀", "min": 12000, "max": 20000, "msg": "شاركت في رحلة استكشافية مدارية سرية وصُرف لك بدل مخاطر خيالي!"},
+    {"job": "خبير أمن سيبراني دولي 🔐", "min": 8000, "max": 17000, "msg": "صددت هجوماً إلكترونياً عالمياً وأنقذت بنوكاً كبرى من الانهيار!"},
+    {"job": "متداول حيتان البورصة 📈", "min": 5000, "max": 15000, "msg": "ضربت صفقة خيالية في سوق العملات الرقمية وبعت عند القمة التاريخية!"},
+    {"job": "طبيب جراح بروفيسور 🩺", "min": 6000, "max": 14000, "msg": "أنجزت عملية جراحية نادرة لوزير دولة ونزل لك الشيك الفاخر!"},
+    {"job": "مطور ذكاء اصطناعي 🤖", "min": 4000, "max": 12000, "msg": "بعت خوارزمية ذكية لشركة سيارات ذاتية القيادة وأخذت حصتك الطائلة!"},
+    {"job": "مهندس برمجيات وتطبيقات 💻", "min": 3000, "max": 8000, "msg": "أصلحت ثغرة قاتلة في سيرفرات اللعبة والجروب وصرفوا لك مكافأة ضخمة!"},
+    {"job": "صانع محتوى تريند 🎬", "min": 2000, "max": 7500, "msg": "مقطعك الأخير حصد ملايين المشاهدات وأرباح الإعلانات تفجرت!"},
+    {"job": "مطور ألعاب مستقل 🎮", "min": 1500, "max": 6000, "msg": "أطلقت متجراً وتحديثاً أسطورياً لعبتك وحققت مبيعات عالية جداً!"},
+    {"job": "صياد جوائز الثغرات 🏆", "min": 2500, "max": 5500, "msg": "اكتشفت ثغرة في تطبيق تواصل شهير وسلموك المكافأة فوراً!"},
+    {"job": "مدير تسويق ومشاهير 🎯", "min": 1200, "max": 4500, "msg": "وقعت عقداً إعلانياً ضخماً لأحد المتاجر الكبرى وأخذت عمولتك السخية!"},
+    {"job": "مصمم جرافيك محترف 🎨", "min": 1000, "max": 4000, "msg": "صممت هوية بصرية وشعارات لشركة استثمارية ودفعوا لك شيكاً محترماً!"},
+    {"job": "مترجم مؤتمرات دولية 📝", "min": 1000, "max": 3000, "msg": "ترجمت مؤتمراً دبلوماسياً مغلقاً لساعات طويلة واستلمت أتعابك!"}
 ]
 
 # ==========================================
@@ -165,17 +166,17 @@ def create_account(message):
     if result:
         cursor.execute('UPDATE users SET has_account = 1, cash = ? WHERE user_id = ?', (gift, user_id))
     else:
-        cursor.execute('INSERT INTO users VALUES (?, 1, ?, 0, None, None, None, None, None, None)', (user_id, gift))
+        cursor.execute('INSERT INTO users (user_id, has_account, cash, bank, last_salary, last_daily, last_luck, last_speculate, last_invest, last_deposit) VALUES (?, 1, ?, 0, None, None, None, None, None, None)', (user_id, gift))
     conn.commit()
     conn.close()
     bot.reply_to(message, f"🎉 تم فتح حسابك بنجاح وجيبك يحتوي {gift} ريال كاش!")
 
 # ==========================================
-# 📊 أمر رصيد الفلوس (ويقوم بالفحص التلقائي للدين)
+# 📊 أمر رصيد الفلوس
 # ==========================================
 @bot.message_handler(func=lambda message: message.text == "فلوسي")
 def my_money(message):
-    check_and_apply_debts()  # تشغيل الفحص التلقائي للدين قبل عرض الرصيد
+    check_and_apply_debts()
     user_id = message.from_user.id
     if not is_registered(user_id):
         bot.reply_to(message, "⚠️ سجل حسابك أولاً.")
@@ -185,7 +186,6 @@ def my_money(message):
     cursor.execute('SELECT cash, bank FROM users WHERE user_id = ?', (user_id,))
     cash, bank = cursor.fetchone()
     
-    # فحص لو كان عليه أقساط دين متبقية تحت بند العقوبة المفتوحة
     cursor.execute('SELECT remaining_penalty FROM debts WHERE debtor_id = ? AND remaining_penalty > 0', (user_id,))
     penalty_res = cursor.fetchone()
     penalty_msg = f"\n⚠️ **تنبيه:** متأخر عن الدين ومطلوب سحب تلقائي مستمر لـ {penalty_res[0]} ريال!" if penalty_res else ""
@@ -194,7 +194,7 @@ def my_money(message):
     bot.reply_to(message, f"📊 **رصيدك الحالي:**\n💵 كاش بجيبك: {cash} ريال\n🏦 بالبنك الآمن: {bank} ريال{penalty_msg}")
 
 # ==========================================
-# 💼 أمر الراتب المحدث (يسحب تلقائياً للدين لو متأخر)
+# 💼 أمر الراتب
 # ==========================================
 @bot.message_handler(func=lambda message: message.text == "راتب")
 def get_salary(message):
@@ -220,7 +220,7 @@ def get_salary(message):
     conn.close()
     
     bot.reply_to(message, f"💼 **{job['job']}**: {job['msg']}\n💰 نزل لك: +{salary} ريال كاش!")
-    check_and_apply_debts()  # لو عليه دين متأخر، يتم سحب الراتب الجديد له فوراً لصالح الدائن
+    check_and_apply_debts()
 
 # ==========================================
 # 🎁 الهدية اليومية
@@ -238,7 +238,7 @@ def get_daily(message):
         bot.reply_to(message, "❌ المكافأة اليومية كل 24 ساعة!")
         conn.close()
         return
-    bonus = 500
+    bonus = 1500  # تم رفع اليومية أيضاً لتتناسب مع الرواتب الجديدة
     cursor.execute('UPDATE users SET cash = ?, last_daily = ? WHERE user_id = ?', (cash + bonus, now.strftime('%Y-%m-%d %H:%M:%S'), user_id))
     conn.commit()
     conn.close()
@@ -246,9 +246,9 @@ def get_daily(message):
     check_and_apply_debts()
 
 # ==========================================
-# 🎲 ألعاب الحظ والمضاربة (تعمل بالكاش فقط + مؤقت 20 دقيقة)
+# 🎲 ألعاب الحظ والمضاربة والاستثمار
 # ==========================================
-@bot.message_handler(func=lambda message: message.text and (message.text.startswith("حظ") or message.text.startswith("مضاربة")))
+@bot.message_handler(func=lambda message: message.text and (message.text.startswith("حظ") or message.text.startswith("مضاربة") or message.text.startswith("استثمار")))
 def games(message):
     user_id = message.from_user.id
     if not is_registered(user_id): return
@@ -262,8 +262,8 @@ def games(message):
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('SELECT cash, last_luck, last_speculate FROM users WHERE user_id = ?', (user_id,))
-    cash, l_luck, l_spec = cursor.fetchone()
+    cursor.execute('SELECT cash, last_luck, last_speculate, last_invest FROM users WHERE user_id = ?', (user_id,))
+    cash, l_luck, l_spec, l_inv = cursor.fetchone()
     now = datetime.now()
     
     if args[0] == "حظ":
@@ -286,12 +286,22 @@ def games(message):
         cursor.execute('UPDATE users SET cash = ?, last_speculate = ? WHERE user_id = ?', (new_cash, now.strftime('%Y-%m-%d %H:%M:%S'), user_id))
         bot.reply_to(message, f"📈 {'🚀 نجحت المضاربة وربحت 150%!' if win else '💥 انهارت الأسهم وخسرت كاشك!'}")
 
+    elif args[0] == "استثمار":
+        if l_inv and now < datetime.strptime(l_inv, '%Y-%m-%d %H:%M:%S') + timedelta(minutes=20):
+            bot.reply_to(message, "❌ انتظر 20 دقيقة للاستثمار مجدداً."); conn.close(); return
+        if cash < amount: bot.reply_to(message, "❌ كاشك لا يكفي!"); conn.close(); return
+        
+        win = random.choice([True, False])
+        new_cash = cash + amount if win else cash - amount
+        cursor.execute('UPDATE users SET cash = ?, last_invest = ? WHERE user_id = ?', (new_cash, now.strftime('%Y-%m-%d %H:%M:%S'), user_id))
+        bot.reply_to(message, f"📊 {'🔥 نجح مشروعك التجاري وتضاعفت أموالك!' if win else '💸 تعرض مشروعك لخسارة فادحة!'}")
+
     conn.commit()
     conn.close()
     check_and_apply_debts()
 
 # ==========================================
-# 🏦 عمليات البنك: إيداع (كل 6 ساعات للسلامة) وسحب مفتوح
+# 🏦 عمليات البنك
 # ==========================================
 @bot.message_handler(func=lambda message: message.text and (message.text.startswith("إيداع") or message.text.startswith("سحب")))
 def bank_system(message):
@@ -328,7 +338,7 @@ def bank_system(message):
     conn.close()
 
 # ==========================================
-# 💸 أمر تحويل الأموال بالرد (من البنك للبنك مباشرة للأمان)
+# 💸 أمر تحويل الأموال بالرد
 # ==========================================
 @bot.message_handler(func=lambda message: message.text and message.text.startswith("تحويل"))
 def transfer_money(message):
@@ -351,7 +361,7 @@ def transfer_money(message):
     cursor.execute('SELECT bank FROM users WHERE user_id = ?', (sender_id,))
     s_bank = cursor.fetchone()[0]
     if s_bank < amount:
-        bot.reply_to(message, "❌ رصيد بنكك لا يكفي للتحويل الرسمى!")
+        bot.reply_to(message, "❌ رصيد بنكك لا يكفي للتحويل الرسمي!")
         conn.close()
         return
         
@@ -362,7 +372,7 @@ def transfer_money(message):
     bot.reply_to(message, f"💸 تم تحويل {amount} ريال بنكياً بنجاح إلى حساب {message.reply_to_message.from_user.first_name}!")
 
 # ==========================================
-# 🥷 أمر السرقة الاحترافي (من الكاش للكاش بالرد)
+# 🥷 أمر السرقة الاحترافي
 # ==========================================
 @bot.message_handler(func=lambda message: message.text == "سرقة")
 def steal_cash(message):
@@ -388,23 +398,23 @@ def steal_cash(message):
 
     success = random.choice([True, False])
     if success:
-        stolen = random.randint(10, int(victim_cash * 0.5))  # يسرق كحد أقصى 50% من كاش الضحية الحالي
+        stolen = random.randint(10, int(victim_cash * 0.5))
         cursor.execute('UPDATE users SET cash = cash + ? WHERE user_id = ?', (stolen, thief_id))
         cursor.execute('UPDATE users SET cash = cash - ? WHERE user_id = ?', (stolen, victim_id))
-        bot.reply_to(message, f"🥷 نجحت السرقة غسيل أموال فاشل!\n💰 سرقت بنجاح {stolen} ريال كاش من مخبأ {message.reply_to_message.from_user.first_name}!")
+        bot.reply_to(message, f"🥷 نجحت السرقة!\n💰 سرقت بنجاح {stolen} ريال كاش من مخبأ {message.reply_to_message.from_user.first_name}!")
     else:
-        penalty = random.randint(50, 300)
+        penalty = random.randint(100, 1000) # تم رفع قيمة العقوبة لتتناسب مع الاقتصاد الجديد
         penalty = min(penalty, thief_cash) if thief_cash > 0 else 0
         cursor.execute('UPDATE users SET cash = cash - ? WHERE user_id = ?', (penalty, thief_id))
         cursor.execute('UPDATE users SET cash = cash + ? WHERE user_id = ?', (penalty, victim_id))
-        bot.reply_to(message, f"👮 كُشفت المحاولة وتم القبض عليك بالجرم المشهود!\n💸 دفعت تعويضاً قدره {penalty} ريال كاش من جيبك للضحية!")
+        bot.reply_to(message, f"👮 كُشفت المحاولة وتم القبض عليك!\n💸 دفعت تعويضاً قدره {penalty} ريال كاش من جيبك للضحية!")
 
     conn.commit()
     conn.close()
     check_and_apply_debts()
 
 # ==========================================
-# 🤝 نظام الدين التلقائي والمؤتمت بالكامل بالرد
+# 🤝 نظام الدين
 # ==========================================
 @bot.message_handler(func=lambda message: message.text and (message.text.startswith("دين") or message.text.startswith("سداد")))
 def debt_system(message):
@@ -429,30 +439,26 @@ def debt_system(message):
         except: return
         if amount <= 0: return
         
-        # فحص إذا كان الطالب مديناً بالفعل لشخص آخر لمنع تكدس الديون
         cursor.execute('SELECT debt_id FROM debts WHERE debtor_id = ?', (user_id,))
         if cursor.fetchone():
-            bot.reply_to(message, "❌ لديك سلف أو دين حالي في ذمتك! سدده أولاً قبل طلب دين جديد.")
+            bot.reply_to(message, "❌ لديك سلف أو دين حالي في ذمتك! سدده أولاً.")
             conn.close()
             return
             
-        # الدائن يسلف من حساب البنك الخاص به للأمان
         cursor.execute('SELECT bank FROM users WHERE user_id = ?', (other_id,))
         creditor_bank = cursor.fetchone()[0]
         if creditor_bank < amount:
-            bot.reply_to(message, "❌ هذا الشخص لا يملك السيولة الكافية في بنكه لإقراضك هذا المبلغ!")
+            bot.reply_to(message, "❌ هذا الشخص لا يملك السيولة الكافية في بنكه لإقراضك!")
             conn.close()
             return
             
-        # إتمام عملية الدين
         now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute('UPDATE users SET bank = bank - ? WHERE user_id = ?', (amount, other_id))
         cursor.execute('UPDATE users SET cash = cash + ? WHERE user_id = ?', (amount, user_id))
         cursor.execute('INSERT INTO debts (debtor_id, creditor_id, amount, start_time) VALUES (?, ?, ?, ?)', (user_id, other_id, amount, now_str))
-        bot.reply_to(message, f"🤝 تمت عملية السلف بنجاح!\n👤 استعرت {amount} ريال كاش من {message.reply_to_message.from_user.first_name}.\n⏳ معك 3 ساعات بالضبط لإرجاعها وإلا ستتضاعف وتتعرض لعقوبة السحب والمصادرة التلقائية الكلية!")
+        bot.reply_to(message, f"🤝 تمت عملية السلف بنجاح!\n💡 استعرت {amount} ريال كاش من {message.reply_to_message.from_user.first_name}.\n⏳ معك 3 ساعات بالضبط لإرجاعها!")
         
     elif action == "سداد":
-        # تسديد الدين يتم بالرد على الدائن الأصلي
         cursor.execute('SELECT debt_id, amount, is_doubled, remaining_penalty FROM debts WHERE debtor_id = ? AND creditor_id = ?', (user_id, other_id))
         debt_res = cursor.fetchone()
         if not debt_res:
@@ -468,20 +474,18 @@ def debt_system(message):
         my_cash = cursor.fetchone()[0]
         
         if my_cash < required:
-            bot.reply_to(message, f"❌ كاش جيبك لا يكفي للسداد التام! مطلوب منك كاش صافي قدره: {required} ريال.")
+            bot.reply_to(message, f"❌ كاش جيبك لا يكفي! مطلوب منك كاش صافي قدره: {required} ريال.")
             conn.close()
             return
             
-        # خصم السداد وإغلاق الدين
         cursor.execute('UPDATE users SET cash = cash - ? WHERE user_id = ?', (required, user_id))
         cursor.execute('UPDATE users SET bank = bank + ? WHERE user_id = ?', (required, other_id))
         cursor.execute('DELETE FROM debts WHERE debt_id = ?', (debt_id,))
-        bot.reply_to(message, f"🎉 كفو! أرجعت الأمانة لأصحابها وتم سداد المستحقات بالكامل برصيد {required} ريال.")
+        bot.reply_to(message, f"🎉 تم سداد المستحقات بالكامل برصيد {required} ريال.")
         
     conn.commit()
     conn.close()
 
 if __name__ == '__main__':
-    # تشغيل نظام الاستضافة المستقر لـ Render بالخلفية ليعمل 24 ساعة دون نوم
     Thread(target=run_web_server, daemon=True).start()
     bot.polling(none_stop=True)
