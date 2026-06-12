@@ -1,0 +1,78 @@
+import telebot
+import sqlite3
+import random
+import os
+from datetime import datetime, timedelta
+
+TOKEN = '8998885953:AAEccMLkjPx4shntXeNWiC5NCVaQQXivFn8'
+bot = telebot.TeleBot(TOKEN)
+
+# تحديد مسار حفظ قاعدة البيانات في المجلد الدائم لـ Render
+DB_PATH = '/data/my_new_bank.db' if os.path.exists('/data') else 'my_new_bank.db'
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            cash INTEGER DEFAULT 1000,
+            bank INTEGER DEFAULT 0,
+            last_salary TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def check_user(user_id):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT user_id FROM users WHERE user_id = ?', (user_id,))
+    if not cursor.fetchone():
+        cursor.execute('INSERT INTO users (user_id, cash, bank, last_salary) VALUES (?, ?, ?, ?)', (user_id, 1000, 0, None))
+        conn.commit()
+    conn.close()
+
+init_db()
+
+@bot.message_handler(commands=['start'])
+def start_cmd(message):
+    user_id = message.from_user.id
+    check_user(user_id)
+    bot.reply_to(message, "🌟 البوت شغال بالجروب عبر سيرفر Render الاحترافي!\n الأوامر المتاحة: فلوسي، راتب")
+
+@bot.message_handler(func=lambda message: message.text == "فلوسي")
+def my_money(message):
+    user_id = message.from_user.id
+    name = message.from_user.first_name
+    check_user(user_id)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT cash, bank FROM users WHERE user_id = ?', (user_id,))
+    cash, bank = cursor.fetchone()
+    conn.close()
+    bot.reply_to(message, f"📊 **[{name}]:**\n💵 الكاش: {cash} ريال\n🏦 البنك: {bank} ريال")
+
+@bot.message_handler(func=lambda message: message.text == "راتب")
+def get_salary(message):
+    user_id = message.from_user.id
+    name = message.from_user.first_name
+    check_user(user_id)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT last_salary, cash FROM users WHERE user_id = ?', (user_id,))
+    last_salary_str, cash = cursor.fetchone()
+    now = datetime.now()
+    if last_salary_str:
+        last_salary = datetime.strptime(last_salary_str, '%Y-%m-%d %H:%M:%S')
+        if now < last_salary + timedelta(days=1):
+            bot.reply_to(message, f"❌ عفواً يا {name}، أخذت راتبك اليوم بالفعل!")
+            conn.close()
+            return
+    salary = random.randint(500, 1500)
+    cursor.execute('UPDATE users SET cash = ?, last_salary = ? WHERE user_id = ?', (cash + salary, now.strftime('%Y-%m-%d %H:%M:%S'), user_id))
+    conn.commit()
+    conn.close()
+    bot.reply_to(message, f"💰 مبروك يا {name}! نزل راتبك: {salary} ريال بجيبك.")
+
+bot.polling()
